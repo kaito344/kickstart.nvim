@@ -703,6 +703,24 @@ do
     -- But for many setups, the LSP (`ts_ls`) will work just fine
     -- ts_ls = {},
 
+    -- Python: basedpyright provides completion, hover docs, go-to-definition,
+    -- and type diagnostics. Linting/formatting is Ruff's job (added next).
+    basedpyright = {
+      settings = {
+        basedpyright = {
+          -- Ruff will own import organizing; turn off basedpyright's so they don't fight.
+          disableOrganizeImports = true,
+          analysis = {
+            -- Editor-wide *default*, used for stray .py files outside a project.
+            -- Real projects will set their own mode in pyproject.toml, which wins.
+            -- 'basic' keeps genuine errors (bad imports, undefined names) without
+            -- the strict-typing noise that JAX/NumPyro code triggers constantly.
+            typeCheckingMode = 'basic',
+          },
+        },
+      },
+    },
+
     stylua = {}, -- Used to format Lua code
 
     -- Special Lua Config, as recommended by neovim help docs

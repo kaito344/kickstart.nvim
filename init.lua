@@ -654,6 +654,14 @@ do
       --
       -- When you move your cursor, the highlights will be cleared (the second autocommand).
       local client = vim.lsp.get_client_by_id(event.data.client_id)
+
+      -- basedpyright owns hover (`K`): its types-plus-docs popup is the useful one,
+      -- while Ruff's hover only explains lint rules. Deferring hover to the type
+      -- checker is the setup Ruff's own docs recommend when the two run together.
+      if client and client.name == 'ruff' then
+        client.server_capabilities.hoverProvider = false
+      end
+
       if client and client:supports_method('textDocument/documentHighlight', event.buf) then
         local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
         vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
@@ -711,15 +719,20 @@ do
           -- Ruff will own import organizing; turn off basedpyright's so they don't fight.
           disableOrganizeImports = true,
           analysis = {
-            -- Editor-wide *default*, used for stray .py files outside a project.
-            -- Real projects will set their own mode in pyproject.toml, which wins.
-            -- 'basic' keeps genuine errors (bad imports, undefined names) without
-            -- the strict-typing noise that JAX/NumPyro code triggers constantly.
             typeCheckingMode = 'basic',
+            -- Ruff owns import hygiene (its F401 report carries the fix);
+            -- drop basedpyright's duplicate of the same complaint.
+            diagnosticSeverityOverrides = {
+              reportUnusedImport = 'none',
+            },
           },
         },
       },
     },
+
+    -- Python: Ruff supplies lint diagnostics and code actions.
+    -- The same ruff binary also does formatting, wired through conform in Section 7.
+    ruff = {},
 
     stylua = {}, -- Used to format Lua code
 
@@ -801,7 +814,7 @@ do
       -- You can specify filetypes to autoformat on save here:
       local enabled_filetypes = {
         -- lua = true,
-        -- python = true,
+        python = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -814,6 +827,10 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
+
+      -- Two passes with the same ruff binary: sort and group the imports, then format.
+      python = { 'ruff_organize_imports', 'ruff_format' },
+
       -- rust = { 'rustfmt' },
       -- Conform can also run multiple formatters sequentially
       -- python = { "isort", "black" },

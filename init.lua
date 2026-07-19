@@ -939,7 +939,7 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'gitignore', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'vim', 'vimdoc' }
+  local parsers = { 'bash', 'c', 'diff', 'gitignore', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tmux', 'toml', 'vim', 'vimdoc' }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
@@ -1012,6 +1012,42 @@ do
   --
   --  Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   -- require 'custom.plugins'
+end
+
+-- ============================================================
+-- SECTION 11: REPL (vim-slime)
+-- Send lines / selections / cells from the buffer to a tmux pane
+-- ============================================================
+do
+  -- vim-slime is a vimscript plugin: no Lua `setup()` call. Vimscript
+  -- plugins read their settings from global variables (`vim.g.*`),
+  -- conventionally set BEFORE the plugin loads — the mirror image of
+  -- the add-then-setup() pattern used elsewhere in this file.
+
+  -- Send to tmux (slime's default target is GNU screen).
+  vim.g.slime_target = 'tmux'
+
+  -- Where to aim, so slime never has to ask:
+  --   socket_name = 'default'  -> the tmux server we always use
+  --   target_pane = ':.1'      -> tmux address 'session:window.pane';
+  --                               leaving session and window empty
+  --                               means "current", so this reads:
+  --                               current session, current window,
+  --                               pane 1 — the right-hand pane.
+  -- Re-aim any time with :SlimeConfig.
+  vim.g.slime_default_config = { socket_name = 'default', target_pane = ':.1' }
+  vim.g.slime_dont_ask_default = 1
+
+  -- Wrap every send in bracketed-paste markers so IPython treats a
+  -- multi-line block as one paste instead of re-indenting it line by
+  -- line as if it were being typed.
+  vim.g.slime_bracketed_paste = 1
+
+  -- Our cell fence, same convention as VS Code. (Cell-sending keymaps
+  -- are wired separately.)
+  vim.g.slime_cell_delimiter = '# %%'
+
+  vim.pack.add { gh 'jpalardy/vim-slime' }
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

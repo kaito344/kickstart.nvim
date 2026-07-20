@@ -1058,8 +1058,8 @@ do
 end
 
 -- ============================================================
--- SECTION 12: WRITING (VimTeX)
--- LaTeX compilation via latexmk; PDF viewing and SyncTeX via Skim
+-- SECTION 12: WRITING
+-- VimTeX (latexmk + Skim + SyncTeX) and citation picking from Zotero
 -- ============================================================
 do
   -- VimTeX is a vimscript plugin, exactly like vim-slime above: settings are
@@ -1086,6 +1086,27 @@ do
   -- default to off, which is why focus stays in Neovim after a compile.
 
   vim.pack.add { gh 'lervag/vimtex' }
+
+-- [[ Citations ]]
+  -- telescope-bibtex is a Telescope *extension*, so it obeys Telescope's rules
+  -- rather than VimTeX's: it must be registered AFTER `telescope.setup()` has
+  -- run, or it initialises with the wrong config. Section 5 runs earlier in
+  -- this file, so calling it here is safe.
+  --
+  -- No configuration block is needed — the defaults already fit:
+  --   * it finds `*.bib` under the current working directory (depth 1), which
+  --     is exactly why we launch nvim from the project root;
+  --   * the insert format is chosen from the filetype, so <CR> gives
+  --     `\cite{key}` in a tex buffer and `@key` in markdown.
+  --
+  -- Note this is a plain call, not the `pcall` used for Section 5's fzf
+  -- extension: fzf is conditional on `make` existing, so failing quietly is
+  -- correct there. This one is unconditional, and we want to hear about it.
+  vim.pack.add { gh 'nvim-telescope/telescope-bibtex.nvim' }
+  require('telescope').load_extension 'bibtex'
+
+  vim.keymap.set('n', '<leader>sb', '<cmd>Telescope bibtex<cr>', { desc = '[S]earch [B]ibliography' })
+
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

@@ -939,7 +939,7 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'gitignore', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tmux', 'toml', 'vim', 'vimdoc' }
+  local parsers = { 'bash', 'bibtex', 'c', 'diff', 'gitignore', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tmux', 'toml', 'vim', 'vimdoc' }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
@@ -967,6 +967,13 @@ do
   vim.api.nvim_create_autocmd('FileType', {
     callback = function(args)
       local buf, filetype = args.buf, args.match
+
+      -- VimTeX (Section 12) owns LaTeX buffers. Several of its features —
+      -- mathzone detection, the `i$` / `a$` text objects — read Vim's own
+      -- syntax engine, and treesitter highlighting *replaces* that engine
+      -- rather than sitting beside it. Returning here means we neither start
+      -- a parser for `tex` nor let the auto-install branch below fetch one.
+      if filetype == 'tex' then return end
 
       local language = vim.treesitter.language.get_lang(filetype)
       if not language then return end
@@ -1048,6 +1055,37 @@ do
   vim.g.slime_cell_delimiter = '# %%'
 
   vim.pack.add { gh 'jpalardy/vim-slime' }
+end
+
+-- ============================================================
+-- SECTION 12: WRITING (VimTeX)
+-- LaTeX compilation via latexmk; PDF viewing and SyncTeX via Skim
+-- ============================================================
+do
+  -- VimTeX is a vimscript plugin, exactly like vim-slime above: settings are
+  -- `vim.g.*` globals set BEFORE the plugin loads — the mirror image of the
+  -- add-then-setup() pattern the Lua plugins in this file use.
+
+  -- NOTE: VimTeX must never be lazy-loaded. It is a *filetype* plugin, so it
+  -- already costs almost nothing until a `.tex` buffer appears, and deferring
+  -- it breaks `:VimtexInverseSearch` — the global command Skim will call to
+  -- jump back into this editor. `vim.pack.add` loads eagerly, so we get the
+  -- correct behaviour for free.
+
+  -- Which PDF viewer VimTeX should drive. This single value teaches it how to
+  -- open Skim, refresh it after a rebuild, and ask it to scroll to the line
+  -- under the cursor (forward search, `<localleader>lv`).
+  vim.g.vimtex_view_method = 'skim'
+
+  -- Deliberately NOT set, because VimTeX's defaults already are what we want:
+  --   compiler method  -> 'latexmk' is the default
+  --   latexmk options  -> already include -synctex=1, continuous mode, callbacks
+  --   g:tex_flavor     -> VimTeX overrides `.tex` filetype detection by itself
+  -- Skim refinements exist if the behaviour annoys us later
+  -- (vimtex_view_skim_sync, vimtex_view_skim_activate, ..._reading_bar); all
+  -- default to off, which is why focus stays in Neovim after a compile.
+
+  vim.pack.add { gh 'lervag/vimtex' }
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

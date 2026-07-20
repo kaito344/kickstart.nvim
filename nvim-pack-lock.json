@@ -79,6 +79,10 @@
       "rev": "2cfdc3b24e7ebaa64f5a1a04b00555600c622b79",
       "src": "https://github.com/jpalardy/vim-slime"
     },
+    "vimtex": {
+      "rev": "6368e31fdaf766ff908a2c06e9ee14fc66dec409",
+      "src": "https://github.com/lervag/vimtex"
+    },
     "which-key.nvim": {
       "rev": "3aab2147e74890957785941f0c1ad87d0a44c15a",
       "src": "https://github.com/folke/which-key.nvim"

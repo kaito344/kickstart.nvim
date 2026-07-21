@@ -1087,7 +1087,7 @@ do
 
   vim.pack.add { gh 'lervag/vimtex' }
 
--- [[ Citations ]]
+  -- [[ Citations ]]
   -- telescope-bibtex is a Telescope *extension*, so it obeys Telescope's rules
   -- rather than VimTeX's: it must be registered AFTER `telescope.setup()` has
   -- run, or it initialises with the wrong config. Section 5 runs earlier in
@@ -1106,7 +1106,6 @@ do
   require('telescope').load_extension 'bibtex'
 
   vim.keymap.set('n', '<leader>sb', '<cmd>Telescope bibtex<cr>', { desc = '[S]earch [B]ibliography' })
-
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

@@ -55,6 +55,11 @@
       "rev": "74b06c6c75e4eeb3108ec01852001636d85a932b",
       "src": "https://github.com/nvim-lua/plenary.nvim"
     },
+    "render-markdown.nvim": {
+      "rev": "f422cb5c6855f150e2ddcfaf44e7157b98b34f6a",
+      "src": "https://github.com/MeanderingProgrammer/render-markdown.nvim",
+      "version": "8.0.0 - 9.0.0"
+    },
     "telescope-bibtex.nvim": {
       "rev": "289a6f86ebec06e8ae1590533b732b9981d84900",
       "src": "https://github.com/nvim-telescope/telescope-bibtex.nvim"

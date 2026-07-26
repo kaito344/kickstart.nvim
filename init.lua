@@ -939,7 +939,7 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'bibtex', 'c', 'diff', 'gitignore', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tmux', 'toml', 'vim', 'vimdoc' }
+  local parsers = { 'bash', 'bibtex', 'c', 'diff', 'gitignore', 'html', 'latex', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'python', 'query', 'tmux', 'toml', 'vim', 'vimdoc' }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
@@ -971,8 +971,15 @@ do
       -- VimTeX (Section 12) owns LaTeX buffers. Several of its features —
       -- mathzone detection, the `i$` / `a$` text objects — read Vim's own
       -- syntax engine, and treesitter highlighting *replaces* that engine
-      -- rather than sitting beside it. Returning here means we neither start
-      -- a parser for `tex` nor let the auto-install branch below fetch one.
+      -- rather than sitting beside it.
+      --
+      -- NOTE: the `latex` parser IS installed (see the list above), because
+      -- render-markdown injects it into `$...$` inside markdown notes. This
+      -- early return is therefore the ONLY thing keeping treesitter away from
+      -- `.tex` buffers — nothing here calls `vim.treesitter.start` for them, so
+      -- the parser stays available-but-unattached and VimTeX keeps ownership.
+      -- Deleting this branch would silently hand LaTeX highlighting to
+      -- treesitter and break VimTeX's text objects.
       if filetype == 'tex' then return end
 
       local language = vim.treesitter.language.get_lang(filetype)
@@ -1059,7 +1066,8 @@ end
 
 -- ============================================================
 -- SECTION 12: WRITING
--- VimTeX (latexmk + Skim + SyncTeX) and citation picking from Zotero
+-- VimTeX (latexmk + Skim + SyncTeX), citation picking from Zotero,
+-- and in-buffer markdown rendering for notes
 -- ============================================================
 do
   -- VimTeX is a vimscript plugin, exactly like vim-slime above: settings are
@@ -1106,6 +1114,52 @@ do
   require('telescope').load_extension 'bibtex'
 
   vim.keymap.set('n', '<leader>sb', '<cmd>Telescope bibtex<cr>', { desc = '[S]earch [B]ibliography' })
+
+  -- [[ Markdown notes ]]
+  -- render-markdown.nvim draws markdown inside the buffer: headings become
+  -- icons, fenced code gets a background, tables get real borders. Nothing
+  -- leaves Neovim — no browser, no preview pane, no external renderer — so it
+  -- is closer in spirit to VimTeX's concealment than to a live preview.
+  --
+  -- Every dependency is already satisfied earlier in this file, which is why
+  -- upstream's install snippet is longer than these two lines:
+  --   * `markdown` + `markdown_inline` parsers -> Section 9
+  --   * `html` parser, conceals HTML comments  -> Section 9
+  --   * icon provider for the fence language   -> mini.icons, Section 4
+  --
+  -- Pinned to the 8.x line, same reasoning as LuaSnip and blink.cmp in
+  -- Section 8. `nvim-pack-lock.json` already pins the exact commit, so this is
+  -- not about reproducing a fresh clone; it is about `vim.pack.update()` not
+  -- handing me a v9 that renamed half of this plugin's options.
+  vim.pack.add { { src = gh 'MeanderingProgrammer/render-markdown.nvim', version = vim.version.range '8.*' } }
+
+  -- `setup {}` is optional here — the plugin self-initialises — but kept so
+  -- this reads like every other Lua plugin in the file, and so there is an
+  -- obvious place to put options later.
+  require('render-markdown').setup {
+    -- Frontmatter rendering needs the `yaml` parser, which we don't install.
+    -- The feature degrades silently, so it is switched off explicitly to keep
+    -- `:checkhealth render-markdown` a clean instrument.
+    yaml = { enabled = false },
+
+    -- `latex` is deliberately left at its default of enabled, now that utftex
+    -- exists. See the note below on the converter.
+  }
+
+  -- Deliberately NOT set:
+  --   conceallevel -> the plugin manages it per window, swapping between raw
+  --                   and rendered views itself. Setting it globally, as most
+  --                   tutorials instruct, would hit every other filetype too,
+  --                   VimTeX buffers included.
+  --   file_types   -> defaults to `markdown`, which is what we write.
+  --   converter    -> defaults to { 'utftex', 'latex2text' }, tried in order
+  --                   until one succeeds. utftex is installed via Homebrew and
+  --                   recorded in ~/dotfiles/Brewfile, so the default already
+  --                   picks the better of the two. Naming it here would only
+  --                   duplicate upstream. If a new machine skips the Brewfile,
+  --                   math silently stops rendering — no error, just raw `$…$`.
+  --   completions  -> the plugin can feed checkbox and callout completions to
+  --                   blink.cmp. Not wired until its absence is annoying.
 end
 
 -- The line beneath this is called `modeline`. See `:help modeline`

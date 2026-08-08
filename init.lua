@@ -906,10 +906,29 @@ do
     },
 
     sources = {
-      default = { 'lsp', 'path', 'snippets' },
-    },
+          default = { 'lsp', 'path', 'snippets' },
 
-    snippets = { preset = 'luasnip' },
+          -- Per-filetype overrides to the `default` list above.
+          --
+          -- In `.tex` buffers the defaults are nearly empty-handed: no LSP
+          -- attaches and the snippet tank is empty (see the notes at the top of
+          -- this section). VimTeX instead supplies candidates — commands,
+          -- environments, \ref labels, \cite keys — through the buffer's
+          -- 'omnifunc', which is exactly what <C-x><C-o> queries by hand.
+          --
+          -- blink's built-in `omni` source asks that same omnifunc, so adding it
+          -- here feeds VimTeX's candidates into the automatic popup. Nothing new
+          -- is installed: `omni` is built into blink like lsp/path/snippets, so
+          -- no `providers` entry is needed and the lockfile does not change.
+          --
+          -- `inherit_defaults` keeps lsp/path/snippets in the list too. Today
+          -- they are harmless no-ops in tex, but this stays correct if a tex
+          -- LSP or snippets ever appear.
+          per_filetype = {
+            tex = { inherit_defaults = true, 'omni' },
+          },
+        },
+        snippets = { preset = 'luasnip' },
 
     -- Blink.cmp includes an optional, recommended rust fuzzy matcher,
     -- which automatically downloads a prebuilt binary when enabled.
